@@ -54,11 +54,17 @@ def build_config(_config_file):
             elif section == 'REPORTS':
                 CONFIG['REPORTS'].update({
                     'REPORT_NETWORKS': config.get(section, 'REPORT_NETWORKS'),
+                    'REPORT_RCM': config.get(section, 'REPORT_RCM'),
                     'REPORT_INTERVAL': config.getint(section, 'REPORT_INTERVAL'),
-                    'REPORT_PATH': config.get(section, 'REPORT_PATH'),
+                    'REPORT_PORT': config.get(section, 'REPORT_PORT'),
+                    'REPORT_CLIENTS': config.get(section, 'REPORT_CLIENTS').split(','),
                     'PRINT_PEERS_INC_MODE': config.getboolean(section, 'PRINT_PEERS_INC_MODE'),
                     'PRINT_PEERS_INC_FLAGS': config.getboolean(section, 'PRINT_PEERS_INC_FLAGS')
                 })
+                if CONFIG['REPORTS']['REPORT_PORT']:
+                    CONFIG['REPORTS']['REPORT_PORT'] = int(CONFIG['REPORTS']['REPORT_PORT'])
+                if CONFIG['REPORTS']['REPORT_RCM']:
+                    CONFIG['REPORTS']['REPORT_RCM'] = bool(CONFIG['REPORTS']['REPORT_RCM'])
 
             elif section == 'LOGGER':
                 CONFIG['LOGGER'].update({
@@ -75,6 +81,7 @@ def build_config(_config_file):
                     'PEER_FILE': config.get(section, 'PEER_FILE'),
                     'SUBSCRIBER_FILE': config.get(section, 'SUBSCRIBER_FILE'),
                     'TGID_FILE': config.get(section, 'TGID_FILE'),
+                    'LOCAL_FILE': config.get(section, 'LOCAL_FILE'),
                     'PEER_URL': config.get(section, 'PEER_URL'),
                     'SUBSCRIBER_URL': config.get(section, 'SUBSCRIBER_URL'),
                     'STALE_TIME': config.getint(section, 'STALE_DAYS') * 86400,
@@ -187,6 +194,7 @@ def build_config(_config_file):
                 CONFIG['SYSTEMS'][section]['LOCAL']['FLAGS'] = '\x00\x00'+chr(FLAG_1)+chr(FLAG_2)
     
     except ConfigParser.Error, err:
+        print(err)
         sys.exit('Could not parse configuration file, exiting...')
         
     return CONFIG
