@@ -244,6 +244,124 @@ class confbridgeIPSC(IPSC):
     #     CALLBACK FUNCTIONS FOR USER PACKET TYPES
     #************************************************
     #
+
+
+
+    def private_data(self, _src_sub, _dst_sub, _ts, _end, _peerid, _data):    
+        if allow_sub(_src_sub) == False:
+            print('({}) Private Data Packet Recejected by ACL: {}' .format(self._system, _src_sub))
+            return
+
+        now = time()
+        self._logger.debug('(%s) Private Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
+        
+        for _bridge in BRIDGES:
+            for _system in BRIDGES[_bridge]:
+
+                self._logger.debug('(%s) Private Data Bridge Rule Check: System: %s TGID: %s', self._system, _system['SYSTEM'], int_id(_system['TGID']))
+                if (_system['SYSTEM'] == self._system and _system['TGID'] == hex_str_3(0) and _system['TS'] == _ts and _system['ACTIVE'] == True):
+                    
+                    for _target in BRIDGES[_bridge]:
+                        if _target['SYSTEM'] != self._system:
+                            if _target['ACTIVE'] and _target['TGID'] == hex_str_3(0):                          
+                                _target_status = systems[_target['SYSTEM']].STATUS
+                                _target_system = self._CONFIG['SYSTEMS'][_target['SYSTEM']]
+                
+                                #
+                                # BEGIN FRAME FORWARDING
+                                #
+                                # Make a copy of the payload
+                                _tmp_data = _data
+                
+                                # Re-Write the IPSC SRC to match the target network's ID
+                                _tmp_data = _tmp_data.replace(_peerid, _target_system['LOCAL']['RADIO_ID'])
+                
+                                # Re-Write IPSC timeslot value
+                                _call_info = int_id(_data[17:18])
+                                if _target['TS'] == 1:
+                                    _call_info &= ~(1 << 5)
+                                elif _target['TS'] == 2:
+                                    _call_info |= 1 << 5
+                                _call_info = chr(_call_info)
+                                _tmp_data = _tmp_data[:17] + _call_info + _tmp_data[18:] 
+                                
+                                # Send the packet to all peers in the target IPSC
+                                systems[_target['SYSTEM']].send_to_ipsc(_tmp_data)
+                                
+                                self._logger.debug('(%s) Private Data Packet Forwarded to system (%s)!', self._system, _target['SYSTEM'])
+                                #
+                                # END FRAME FORWARDING
+                                #
+                
+                
+                                # Set values for the contention handler to test next time there is a frame to forward
+                                _target_status[_target['TS']]['TX_TGID'] = _target['TGID']
+                                _target_status[_target['TS']]['TX_TIME'] = now
+                                _target_status[_target['TS']]['TX_SRC_SUB'] = _src_sub
+
+
+
+
+    def group_data(self, _src_sub, _dst_group, _ts, _end, _peerid, _data):    
+        if allow_sub(_src_sub) == False:
+            print('({}) Group Data Packet Recejected by ACL: {}' .format(self._system, _src_sub))
+            return
+
+        now = time()
+        self._logger.debug('(%s) Group Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_group))
+        
+        for _bridge in BRIDGES:
+            for _system in BRIDGES[_bridge]:
+
+                if (_system['SYSTEM'] == self._system and _system['TGID'] == _dst_group and _system['TS'] == _ts and _system['ACTIVE'] == True):
+                    
+                    for _target in BRIDGES[_bridge]:
+                        if _target['SYSTEM'] != self._system:
+                            if _target['ACTIVE']:                          
+                                _target_status = systems[_target['SYSTEM']].STATUS
+                                _target_system = self._CONFIG['SYSTEMS'][_target['SYSTEM']]
+                
+                                #
+                                # BEGIN FRAME FORWARDING
+                                #
+                                # Make a copy of the payload
+                                _tmp_data = _data
+                
+                                # Re-Write the IPSC SRC to match the target network's ID
+                                _tmp_data = _tmp_data.replace(_peerid, _target_system['LOCAL']['RADIO_ID'])
+                
+                                # Re-Write the destination Group ID
+                                _tmp_data = _tmp_data.replace(_dst_group, _target['TGID'])
+            
+                                # Re-Write IPSC timeslot value
+                                _call_info = int_id(_data[17:18])
+                                if _target['TS'] == 1:
+                                    _call_info &= ~(1 << 5)
+                                elif _target['TS'] == 2:
+                                    _call_info |= 1 << 5
+                                _call_info = chr(_call_info)
+                                _tmp_data = _tmp_data[:17] + _call_info + _tmp_data[18:] 
+                                
+                                # Send the packet to all peers in the target IPSC
+                                systems[_target['SYSTEM']].send_to_ipsc(_tmp_data)
+                                
+                                self._logger.debug('(%s) Group Data Packet Forwarded to system (%s)!', self._system, _target['SYSTEM]'])
+                                #
+                                # END FRAME FORWARDING
+                                #
+                
+                
+                                # Set values for the contention handler to test next time there is a frame to forward
+                                _target_status[_target['TS']]['TX_TGID'] = _target['TGID']
+                                _target_status[_target['TS']]['TX_TIME'] = now
+                                _target_status[_target['TS']]['TX_SRC_SUB'] = _src_sub
+                
+
+        # Mark the group and time that a packet was recieved for the contention handler to use later
+        self.STATUS[_ts]['RX_TGID'] = _dst_group
+        self.STATUS[_ts]['RX_TIME']  = now
+
+
     def group_voice(self, _src_sub, _dst_group, _ts, _end, _peerid, _data):
 
         # Check for ACL match, and return if the subscriber is not allowed
@@ -265,7 +383,7 @@ class confbridgeIPSC(IPSC):
                     
                     for _target in BRIDGES[_bridge]:
                         if _target['SYSTEM'] != self._system:
-                            if _target['ACTIVE']:                          
+                            if _target['ACTIVE'] and _target['TGID'] != hex_str_3(0):                          
                                 _target_status = systems[_target['SYSTEM']].STATUS
                                 _target_system = self._CONFIG['SYSTEMS'][_target['SYSTEM']]
                 
