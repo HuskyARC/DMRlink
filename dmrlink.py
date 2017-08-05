@@ -439,6 +439,87 @@ class IPSC(DatagramProtocol):
                 self._logger.warning('(%s) Peer Deleted (not in new peer list): %s', self._system, int_id(peer))
 
 
+    #********************************************************
+    #     CALLBACK FUNCTIONS FOR CUSTOM REPORTING OPERATIONS
+    #********************************************************
+
+    def _report_call_mon_status(self, _data):
+        # Build a dict containing all the interesting data
+        rcm_csdata = {
+          "system"      : self._system,
+          "source"      : _data[1:5],
+          "ipsc_source" : _data[5:9],
+          "sequence"    : _data[9:13],
+          "_slot"       : _data[13],
+          "_status"      : _data[15], # suspect [14:16] but nothing in leading byte?
+          "rf_source"   : _data[16:19],
+          "rf_target"   : _data[19:22],
+          "_type"        : _data[22],
+          "priority"    : _data[23],
+          "sec"         : _data[24],
+          "source_alias": str(get_alias(_data[1:5], peer_ids)),
+          "ipsc_alias"  : str(get_alias(_data[5:9], peer_ids)),
+          "sub_alias"   : str(get_alias(_data[16:19], subscriber_ids))
+          }
+        
+        # Resolve some constants
+        rcm_csdata["slot"] = TS[rcm_csdata["_slot"]]
+        rcm_csdata["status"] = STATUS[rcm_csdata["_status"]]
+        rcm_csdata["type"] = TYPE[rcm_csdata["_type"]]
+
+        # Get the alias for the destination ID
+        if rcm_csdata["_type"] == '\x4F' or '\x51':
+            rcm_csdata["tgt_alias"] = str(get_alias(rcm_csdata["rf_target"], talkgroup_ids))
+        else:
+            rcm_csdata["tgt_alias"] = str(get_alias(rcm_csdata["rf_target"], subscriber_ids))
+
+        # Try to call the reporting object with the data
+        try:
+          self._report.push_rcm_status(rcm_csdata)
+        except:
+          self._logger.debug('(%s) reporting object does not appear to support structured RCM reporting', self._system)
+
+    def _report_call_mon_rpt(self, _data):
+        if not rpt:
+            return
+        _source    = _data[1:5]
+        _ts1_state = _data[5]
+        _ts2_state = _data[6]
+        
+        _source = str(int_id(_source)) + ', ' + str(get_alias(_source, peer_ids))
+        
+        print('Call Monitor - Repeater State')
+        print('TIME:         ', datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        print('DATA SOURCE:  ', _source)
+     
+        try:
+            print('TS1 State:    ', REPEAT[_ts1_state])
+        except KeyError:
+            print('TS1 State (unknown): ', ahex(_ts1_state))
+        try:
+            print('TS2 State:    ', REPEAT[_ts2_state])
+        except KeyError:
+            print('TS2 State (unknown): ', ahex(_ts2_state))
+        print()
+
+    def _report_call_mon_nack(self, _data):
+        if not nack:
+            return
+        _source = _data[1:5]
+        _nack =   _data[5]
+        
+        _source = get_alias(_source, peer_ids)
+        
+        print('Call Monitor - Transmission NACK')
+        print('TIME:        ', datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        print('DATA SOURCE: ', _source)
+        try:
+            print('NACK Cause:  ', NACK[_nack])
+        except KeyError:
+            print('NACK Cause (unknown): ', ahex(_nack))
+        print()
+
+
     #************************************************
     #     CALLBACK FUNCTIONS FOR USER PACKET TYPES
     #************************************************
@@ -446,17 +527,17 @@ class IPSC(DatagramProtocol):
     # If RCM reporting and reporting is network-based in the global configuration, 
     # send the RCM packet to the monitoring server
     def call_mon_status(self, _data):
-        self._logger.debug('(%s) Repeater Call Monitor Origin Packet Received: %s', self._system, ahex(_data))
+        self._logger.debug('(%s) Unhandled Repeater Call Monitor Origin Packet Received: %s', self._system, ahex(_data))
         if self._rcm:
             self._report.send_rcm(self._system + ','+ _data)
             
     def call_mon_rpt(self, _data):
-        self._logger.debug('(%s) Repeater Call Monitor Repeating Packet Received: %s', self._system, ahex(_data))
+        self._logger.debug('(%s) Unhandled Repeater Call Monitor Repeating Packet Received: %s', self._system, ahex(_data))
         if self._rcm:
             self._report.send_rcm(self._system + ',' + _data)
             
     def call_mon_nack(self, _data):
-        self._logger.debug('(%s) Repeater Call Monitor NACK Packet Received: %s', self._system, ahex(_data))
+        self._logger.debug('(%s) Unhandled Repeater Call Monitor NACK Packet Received: %s', self._system, ahex(_data))
         if self._rcm:
             self._report.send_rcm(self._system + ',' + _data)
     
@@ -464,19 +545,19 @@ class IPSC(DatagramProtocol):
         self._logger.debug('(%s) XCMP/XNL Packet Received: %s', self._system, ahex(_data))
         
     def repeater_wake_up(self, _data):
-        self._logger.debug('(%s) Repeater Wake-Up Packet Received: %s', self._system, ahex(_data))
+        self._logger.debug('(%s) Unhandled Repeater Wake-Up Packet Received: %s', self._system, ahex(_data))
         
     def group_voice(self, _src_sub, _dst_sub, _ts, _end, _peerid, _data):
-        self._logger.debug('(%s) Group Voice Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
+        self._logger.debug('(%s) Unhandled Group Voice Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
     
     def private_voice(self, _src_sub, _dst_sub, _ts, _end, _peerid, _data):
-        self._logger.debug('(%s) Private Voice Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
+        self._logger.debug('(%s) Unhandled Private Voice Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
     
     def group_data(self, _src_sub, _dst_sub, _ts, _end, _peerid, _data):    
-        self._logger.debug('(%s) Group Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
+        self._logger.debug('(%s) Unhandled Group Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
     
     def private_data(self, _src_sub, _dst_sub, _ts, _end, _peerid, _data):    
-        self._logger.debug('(%s) Private Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
+        self._logger.debug('(%s) Unhandled Private Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
 
     def unknown_message(self, _packettype, _peerid, _data):
         self._logger.error('(%s) Unknown Message - Type: %s From: %s Packet: %s', self._system, ahex(_packettype), int_id(_peerid), ahex(_data))
@@ -888,14 +969,17 @@ class IPSC(DatagramProtocol):
 
             # ORIGINATED BY PEERS, NOT IPSC MAINTENANCE: Call monitoring is all we've found here so far 
             elif _packettype == CALL_MON_STATUS:
+                self.report_call_mon_status(data)
                 self.call_mon_status(data)
                 return
                 
             elif _packettype == CALL_MON_RPT:
+                self.report_call_mon_rpt(data)
                 self.call_mon_rpt(data)
                 return
                 
             elif _packettype == CALL_MON_NACK:
+                self.report_call_mon_nack(data)
                 self.call_mon_nack(data)
                 return
             

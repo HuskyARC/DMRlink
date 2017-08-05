@@ -108,6 +108,8 @@ def config_reports(_config, _logger, _factory):
         reporting = task.LoopingCall(reporting_loop, _logger, report_server)
         reporting.start(_config['REPORTS']['REPORT_INTERVAL'])
 
+    elif _config['REPORTS']['REPORT_NETWORKS'] == 'INFLUXDB':
+      report_server = _factory(_config, _logger)
     else:
         def reporting_loop(_logger):
             _logger.debug('Periodic Reporting Loop Started (NULL)')
@@ -548,7 +550,37 @@ class confbridgeReportFactory(reportFactory):
         
     def send_bridgeEvent(self, _data):
         self.send_clients(REPORT_OPCODES['BRDG_EVENT']+_data)
-        
+
+class influxReportFactory(confbridgeReportFactory):
+  def __init__(self, config, logger):
+    logger.debug("Reporting Object Opening InfluxDB Client Connection...")
+    _influx = InfluxDBClient(
+        _config['REPORTS']['REPORT_SERVER'],
+        _config['REPORTS']['REPORT_PORT'],
+        _config['REPORTS']['REPORT_USER'],
+        _config['REPORTS']['REPORT_PASS'],
+        _config['REPORTS']['REPORT_DB'])
+    self.super().method(config, logger)
+
+  def push_rcm_status(self, data):
+    point = {
+        "measurement": "call_state",
+        "tags": {
+          "IPSC": data["system"],
+          "source_rpt_id": data["ipsc_source"],
+          "source_rpt_alias": data["ipsc_alias"],
+          "Slot": data["slot"],
+          "Status": data["status"],
+          "Type": data["type"]
+          },
+        "fields": {
+          "src_id": data["rf_source"],
+          "dst_id": data["rf_target"],
+          "src_alias": data["sub_alias"],
+          "dst_alias": data["tgt_alias"]
+          }
+        }
+    _influx.write_points([point])
     
 if __name__ == '__main__':
     import argparse
