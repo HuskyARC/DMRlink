@@ -969,17 +969,17 @@ class IPSC(DatagramProtocol):
 
             # ORIGINATED BY PEERS, NOT IPSC MAINTENANCE: Call monitoring is all we've found here so far 
             elif _packettype == CALL_MON_STATUS:
-                self.report_call_mon_status(data)
+                self._report_call_mon_status(data)
                 self.call_mon_status(data)
                 return
                 
             elif _packettype == CALL_MON_RPT:
-                self.report_call_mon_rpt(data)
+                self._report_call_mon_rpt(data)
                 self.call_mon_rpt(data)
                 return
                 
             elif _packettype == CALL_MON_NACK:
-                self.report_call_mon_nack(data)
+                self._report_call_mon_nack(data)
                 self.call_mon_nack(data)
                 return
             
