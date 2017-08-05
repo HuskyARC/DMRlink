@@ -61,6 +61,8 @@ from dmr_utils.utils import hex_str_3, hex_str_4, int_id
 from dmrlink import IPSC, mk_ipsc_systems, systems, reportFactory, REPORT_OPCODES, build_aliases
 from ipsc.ipsc_const import BURST_DATA_TYPE
 
+from influxdb import InfluxDBClient
+
 
 __author__      = 'Cortney T. Buffington, N0MJS'
 __copyright__   = 'Copyright (c) 2013 - 2016 Cortney T. Buffington, N0MJS and the K0USY Group'
