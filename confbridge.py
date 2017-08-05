@@ -109,8 +109,8 @@ def config_reports(_config, _logger, _factory):
         reporting.start(_config['REPORTS']['REPORT_INTERVAL'])
 
     elif _config['REPORTS']['REPORT_NETWORKS'] == 'INFLUXDB':
-      report_server.clients = []
       report_server = _factory(_config, _logger)
+      report_server.clients = []
     else:
         def reporting_loop(_logger):
             _logger.debug('Periodic Reporting Loop Started (NULL)')
