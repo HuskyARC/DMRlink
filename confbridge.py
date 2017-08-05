@@ -563,7 +563,7 @@ class influxReportFactory(confbridgeReportFactory):
         config['REPORTS']['REPORT_USER'],
         config['REPORTS']['REPORT_PASS'],
         config['REPORTS']['REPORT_DB'])
-    super(influxReportFactory, self).method(config, logger)
+    confbridgeReportFactory.__init__(self, config, logger)
 
   def push_rcm_status(self, data):
     self._logger.debug("Pusuhing Influx Reporting point...")
