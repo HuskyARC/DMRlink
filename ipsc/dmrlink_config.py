@@ -60,6 +60,10 @@ def build_config(_config_file):
                     'REPORT_CLIENTS': config.get(section, 'REPORT_CLIENTS').split(','),
                     'PRINT_PEERS_INC_MODE': config.getboolean(section, 'PRINT_PEERS_INC_MODE'),
                     'PRINT_PEERS_INC_FLAGS': config.getboolean(section, 'PRINT_PEERS_INC_FLAGS')
+                    'REPORT_SERVER' : config.get(section, 'REPORT_SERVER'),
+                    'REPORT_USER' : config.get(section, 'REPORT_USER'),
+                    'REPORT_PASS' : config.get(section, 'REPORT_PASS'),
+                    'REPORT_DB'   : config.get(section, 'REPORT_DB')
                 })
                 if CONFIG['REPORTS']['REPORT_PORT']:
                     CONFIG['REPORTS']['REPORT_PORT'] = int(CONFIG['REPORTS']['REPORT_PORT'])
