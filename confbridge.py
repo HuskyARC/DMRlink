@@ -558,11 +558,11 @@ class influxReportFactory(confbridgeReportFactory):
   def __init__(self, config, logger):
     logger.debug("Reporting Object Opening InfluxDB Client Connection...")
     _influx = InfluxDBClient(
-        _config['REPORTS']['REPORT_SERVER'],
-        _config['REPORTS']['REPORT_PORT'],
-        _config['REPORTS']['REPORT_USER'],
-        _config['REPORTS']['REPORT_PASS'],
-        _config['REPORTS']['REPORT_DB'])
+        config['REPORTS']['REPORT_SERVER'],
+        config['REPORTS']['REPORT_PORT'],
+        config['REPORTS']['REPORT_USER'],
+        config['REPORTS']['REPORT_PASS'],
+        config['REPORTS']['REPORT_DB'])
     self.super().method(config, logger)
 
   def push_rcm_status(self, data):
