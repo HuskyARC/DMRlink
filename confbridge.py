@@ -109,6 +109,7 @@ def config_reports(_config, _logger, _factory):
         reporting.start(_config['REPORTS']['REPORT_INTERVAL'])
 
     elif _config['REPORTS']['REPORT_NETWORKS'] == 'INFLUXDB':
+      report_server.clients = []
       report_server = _factory(_config, _logger)
     else:
         def reporting_loop(_logger):
@@ -563,6 +564,7 @@ class influxReportFactory(confbridgeReportFactory):
     self.super().method(config, logger)
 
   def push_rcm_status(self, data):
+    self._logger.debug("Pusuhing Influx Reporting point...")
     point = {
         "measurement": "call_state",
         "tags": {
@@ -626,7 +628,7 @@ if __name__ == '__main__':
         signal.signal(sig, sig_handler)
     
     # INITIALIZE THE REPORTING LOOP
-    report_server = config_reports(CONFIG, logger, confbridgeReportFactory)
+    report_server = config_reports(CONFIG, logger, influxReportFactory)
     
     # Build ID Aliases
     peer_ids, subscriber_ids, talkgroup_ids, local_ids = build_aliases(CONFIG, logger)
