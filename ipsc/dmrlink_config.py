@@ -59,7 +59,7 @@ def build_config(_config_file):
                     'REPORT_PORT': config.get(section, 'REPORT_PORT'),
                     'REPORT_CLIENTS': config.get(section, 'REPORT_CLIENTS').split(','),
                     'PRINT_PEERS_INC_MODE': config.getboolean(section, 'PRINT_PEERS_INC_MODE'),
-                    'PRINT_PEERS_INC_FLAGS': config.getboolean(section, 'PRINT_PEERS_INC_FLAGS')
+                    'PRINT_PEERS_INC_FLAGS': config.getboolean(section, 'PRINT_PEERS_INC_FLAGS'),
                     'REPORT_SERVER' : config.get(section, 'REPORT_SERVER'),
                     'REPORT_USER' : config.get(section, 'REPORT_USER'),
                     'REPORT_PASS' : config.get(section, 'REPORT_PASS'),
