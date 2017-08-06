@@ -260,6 +260,9 @@ class confbridgeIPSC(IPSC):
         now = time()
         self._logger.debug('(%s) Private Data Packet Received From: %s, IPSC Peer %s, Destination %s', self._system, int_id(_src_sub), int_id(_peerid), int_id(_dst_sub))
         
+        import pdb; pdb.set_trace()
+        
+
         for _bridge in BRIDGES:
             for _system in BRIDGES[_bridge]:
 

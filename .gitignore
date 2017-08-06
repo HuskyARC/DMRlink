@@ -19,3 +19,5 @@ sub_acl.py
 *.json
 *.pickle
 *.csv
+*.swp
+tags
